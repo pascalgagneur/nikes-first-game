@@ -1,239 +1,284 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
     <title>Vårt första spel</title>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: #000; 
-        }
-        canvas { 
-            display: block; 
-        }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #000;
+      }
+      canvas {
+        display: block;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <canvas id="spelPlan"></canvas>
 
     <script>
-// --- LJUD OCH MUSIK ---
-function spelaHoppLjud() {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    oscillator.type = 'square';
-    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
-    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.1);
-}
+      // --- LJUD OCH MUSIK ---
+      function spelaHoppLjud() {
+        const audioCtx = new (
+          window.AudioContext || window.webkitAudioContext
+        )();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = "square";
+        oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(
+          600,
+          audioCtx.currentTime + 0.1,
+        );
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioCtx.currentTime + 0.1,
+        );
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+      }
 
-const melloLatat = ["mello_1.mp3"];
-let nuvarandeLatIndex = 0;
-const bakgrundsMusik = new Audio(melloLatat[nuvarandeLatIndex]);
-bakgrundsMusik.volume = 0.2;
+      const melloLatat = ["mello_1.mp3"];
+      let nuvarandeLatIndex = 0;
+      const bakgrundsMusik = new Audio(melloLatat[nuvarandeLatIndex]);
+      bakgrundsMusik.volume = 0.2;
 
-// --- INITIALISERA CANVAS DIREKT ---
-const canvas = document.getElementById("spelPlan");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+      // --- INITIALISERA CANVAS DIREKT ---
+      const canvas = document.getElementById("spelPlan");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
 
-// --- BILDER ---
-const spelarBild = new Image();
-spelarBild.src = "tjej.png"; 
-const bakgrundsBild = new Image();
-bakgrundsBild.src = "stall_bakgrund.png"; 
+      // --- BILDER ---
+      const spelarBild = new Image();
+      spelarBild.src = "tjej.png";
+      const bakgrundsBild = new Image();
+      bakgrundsBild.src = "stall_bakgrund.png";
 
-// --- SPEL-VARIABLER ---
-let spelAktiv = true; 
-let arPausat = false;
-let poang = 0;
-let highscore = 0;
+      // --- SPEL-VARIABLER ---
+      let spelAktiv = true;
+      let arPausat = false;
+      let poang = 0;
+      let highscore = 0;
 
-let markNiva = canvas.height - 80; 
-let x = 50;
-const spelarBredd = 60; 
-const spelarHojd = 80;  
-let y = markNiva - spelarHojd;     
+      let förraTiden = performance.now();
 
-let velocityY = 0;
-const gravitation = 0.6;
-const hoppStyrka = -15;
-let starPaMarken = false;
+      let markNiva = canvas.height - 80;
+      let x = 50;
+      const spelarBredd = 60;
+      const spelarHojd = 80;
+      let y = markNiva - spelarHojd;
 
-let hinderX = canvas.width;
-let hinderFart = 4;
-let tangenter = {};
+      let velocityY = 0;
+      const gravitation = 0.8;
+      const hoppStyrka = -15;
+      let starPaMarken = false;
 
-// --- FULLSKÄRMS-FIX (RESIZE) ---
-window.addEventListener('resize', function() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    markNiva = canvas.height - 80;
-    if (starPaMarken) y = markNiva - spelarHojd;
-});
+      let hinderX = canvas.width;
+      let hinderFart = 4;
+      let tangenter = {};
 
-// --- KONTROLLER OCH KNAPPAR ---
-window.addEventListener("mousedown", function(e) {
-    // Om pausad, kolla om man klickar på knapparna
-    if (arPausat) {
-        // Fortsätt-knapp
-        if (e.clientX > canvas.width/2 - 100 && e.clientX < canvas.width/2 + 100 && e.clientY > 150 && e.clientY < 200) {
+      // --- FULLSKÄRMS-FIX (RESIZE) ---
+      window.addEventListener("resize", function () {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        markNiva = canvas.height - 80;
+        if (starPaMarken) y = markNiva - spelarHojd;
+      });
+
+      // --- KONTROLLER OCH KNAPPAR ---
+      window.addEventListener("mousedown", function (e) {
+        // Om pausad, kolla om man klickar på knapparna
+        if (arPausat) {
+          // Fortsätt-knapp
+          if (
+            e.clientX > canvas.width / 2 - 100 &&
+            e.clientX < canvas.width / 2 + 100 &&
+            e.clientY > 150 &&
+            e.clientY < 200
+          ) {
             arPausat = false;
+          }
+          // Avsluta-knapp
+          if (
+            e.clientX > canvas.width / 2 - 100 &&
+            e.clientX < canvas.width / 2 + 100 &&
+            e.clientY > 220 &&
+            e.clientY < 270
+          ) {
+            location.reload();
+          }
+          return;
         }
-        // Avsluta-knapp
-        if (e.clientX > canvas.width/2 - 100 && e.clientX < canvas.width/2 + 100 && e.clientY > 220 && e.clientY < 270) {
-            location.reload(); 
+
+        // Hoppa vid klick om spelet körs
+        if (spelAktiv && starPaMarken) {
+          velocityY = hoppStyrka;
+          starPaMarken = false;
+          spelaHoppLjud();
         }
-        return;
-    }
+      });
 
-    // Hoppa vid klick om spelet körs
-    if (spelAktiv && starPaMarken) {
-        velocityY = hoppStyrka;
-        starPaMarken = false;
-        spelaHoppLjud();
-    }
-});
+      window.addEventListener("keydown", (e) => {
+        if (bakgrundsMusik.paused) bakgrundsMusik.play();
+        tangenter[e.key] = true;
 
-window.addEventListener("keydown", (e) => { 
-    if (bakgrundsMusik.paused) bakgrundsMusik.play();
-    tangenter[e.key] = true; 
-    
-    if (e.key === "p" || e.key === "Escape") arPausat = !arPausat;
-    if (!spelAktiv && e.key === "Enter") startaOm();
-});
+        if (e.key === "p" || e.key === "Escape") arPausat = !arPausat;
+        if (!spelAktiv && e.key === "Enter") startaOm();
+      });
 
-window.addEventListener("keyup", (e) => { tangenter[e.key] = false; });
+      window.addEventListener("keyup", (e) => {
+        tangenter[e.key] = false;
+      });
 
-function startaOm() {
-    poang = 0;
-    hinderFart = 4;
-    hinderX = canvas.width;
-    x = 50;
-    markNiva = canvas.height - 80;
-    y = markNiva - spelarHojd;
-    velocityY = 0;
-    spelAktiv = true;
-}
-
-function uppdatera() {
-    if (!spelAktiv || arPausat) return;
-
-    if (tangenter["ArrowLeft"]) x -= 5;
-    if (tangenter["ArrowRight"]) x += 5;
-
-    velocityY += gravitation;
-    y += velocityY;
-
-    if (y > markNiva - spelarHojd) {
+      function startaOm() {
+        poang = 0;
+        hinderFart = 4;
+        hinderX = canvas.width;
+        x = 50;
+        markNiva = canvas.height - 80;
         y = markNiva - spelarHojd;
         velocityY = 0;
-        starPaMarken = true;
-    } else {
-        starPaMarken = false;
-    }
+        spelAktiv = true;
+      }
 
-    if ((tangenter["ArrowUp"] || tangenter[" "]) && starPaMarken) {
-        velocityY = hoppStyrka;
-        starPaMarken = false;
-        spelaHoppLjud();
-    }
+      function uppdatera(dt) {
+        if (!spelAktiv || arPausat) return;
 
-    hinderX -= hinderFart;
-    if (hinderX < -50) {
-        hinderX = canvas.width;
-        poang += 1;
-        hinderFart += 0.2; 
-    }
+        // Multiplicera all fart/rörelse med dt
+        if (tangenter["ArrowLeft"]) x -= 5 * dt;
+        if (tangenter["ArrowRight"]) x += 5 * dt;
 
-    // Krock-koll (räknar hinderY live)
-    let hinderY = markNiva - 30;
-    if (x < hinderX + 30 && x + spelarBredd > hinderX && 
-        y < hinderY + 30 && y + spelarHojd > hinderY) {
-        spelAktiv = false;
-        if (poang > highscore) highscore = poang;
-    }
+        velocityY += gravitation * dt;
+        y += velocityY * dt;
 
-    if (x < 0) x = 0;
-    if (x > canvas.width - spelarBredd) x = canvas.width - spelarBredd;
-}
+        if (y > markNiva - spelarHojd) {
+          y = markNiva - spelarHojd;
+          velocityY = 0;
+          starPaMarken = true;
+        } else {
+          starPaMarken = false;
+        }
 
-function rita() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        if ((tangenter["ArrowUp"] || tangenter[" "]) && starPaMarken) {
+          velocityY = hoppStyrka;
+          starPaMarken = false;
+          spelaHoppLjud();
+        }
 
-    if (bakgrundsBild.complete) { 
-        ctx.drawImage(bakgrundsBild, 0, 0, canvas.width, canvas.height);
-    }
+        hinderX -= hinderFart * dt;
+        if (hinderX < -50) {
+          hinderX = canvas.width;
+          poang += 1;
+          hinderFart += 0.2;
+        }
 
-    uppdatera(); 
+        // Krock-koll (räknar hinderY live)
+        let hinderY = markNiva - 30;
+        if (
+          x < hinderX + 30 &&
+          x + spelarBredd > hinderX &&
+          y < hinderY + 30 &&
+          y + spelarHojd > hinderY
+        ) {
+          spelAktiv = false;
+          if (poang > highscore) highscore = poang;
+        }
 
-    // Rita tjejen
-    ctx.drawImage(spelarBild, x, y, spelarBredd, spelarHojd);
+        if (x < 0) x = 0;
+        if (x > canvas.width - spelarBredd) x = canvas.width - spelarBredd;
+      }
 
-    // Rita hinder
-    ctx.fillStyle = "#8B4513"; 
-    ctx.fillRect(hinderX, markNiva - 30, 30, 30);
-    
-    // Poäng
-    ctx.fillStyle = "white";
-    ctx.font = "bold 24px Arial";
-    ctx.shadowColor = "black";
-    ctx.shadowBlur = 4;
-    ctx.fillText("Poäng: " + poang, 30, 40);
+      function rita() {
+        let nu = performance.now();
+        let deltaTime = (nu - förraTiden) / 16.66;
+        förraTiden = nu;
 
-    // --- PAUS MENY ---
-    if (arPausat) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.textAlign = "center";
-        // Knapp: Fortsätt
-        ctx.fillStyle = "green";
-        ctx.fillRect(canvas.width/2 - 100, 150, 200, 50);
+        // Flytta tjejen med en konstant hastighet
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (bakgrundsBild.complete) {
+          ctx.drawImage(bakgrundsBild, 0, 0, canvas.width, canvas.height);
+        }
+
+        uppdatera(deltaTime);
+
+        // Rita tjejen
+        ctx.drawImage(spelarBild, x, y, spelarBredd, spelarHojd);
+
+        // Rita hinder
+        ctx.fillStyle = "#8B4513";
+        ctx.fillRect(hinderX, markNiva - 30, 30, 30);
+
+        // Poäng
         ctx.fillStyle = "white";
-        ctx.fillText("Fortsätt", canvas.width/2, 182);
+        ctx.font = "bold 24px Arial";
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 4;
+        ctx.fillText("Poäng: " + poang, 30, 40);
 
-        // Knapp: Avsluta
-        ctx.fillStyle = "red";
-        ctx.fillRect(canvas.width/2 - 100, 220, 200, 50);
-        ctx.fillStyle = "white";
-        ctx.fillText("Avsluta", canvas.width/2, 252);
-        ctx.textAlign = "left";
-    }
+        // --- PAUS MENY ---
+        if (arPausat) {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // --- GAME OVER RUTA ---
-    if (!spelAktiv) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-        ctx.fillRect(canvas.width/2 - 150, canvas.height/2 - 100, 300, 200);
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.font = "bold 30px Arial";
-        ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 50);
-        ctx.font = "20px Arial";
-        ctx.fillText("Poäng: " + poang, canvas.width/2, canvas.height/2);
-        ctx.fillText("Bästa: " + highscore, canvas.width/2, canvas.height/2 + 30);
-        ctx.font = "italic 16px Arial";
-        ctx.fillText("Tryck ENTER för att köra igen", canvas.width/2, canvas.height/2 + 70);
-        ctx.textAlign = "left";
-    }
-    
-    requestAnimationFrame(rita); 
-}
+          ctx.textAlign = "center";
+          // Knapp: Fortsätt
+          ctx.fillStyle = "green";
+          ctx.fillRect(canvas.width / 2 - 100, 150, 200, 50);
+          ctx.fillStyle = "white";
+          ctx.fillText("Fortsätt", canvas.width / 2, 182);
 
-let bilderLaddade = 0;
-function bildLaddad() {
-    bilderLaddade++;
-    if (bilderLaddade === 2) rita();
-}
-spelarBild.onload = bildLaddad;
-bakgrundsBild.onload = bildLaddad;
+          // Knapp: Avsluta
+          ctx.fillStyle = "red";
+          ctx.fillRect(canvas.width / 2 - 100, 220, 200, 50);
+          ctx.fillStyle = "white";
+          ctx.fillText("Avsluta", canvas.width / 2, 252);
+          ctx.textAlign = "left";
+        }
+
+        // --- GAME OVER RUTA ---
+        if (!spelAktiv) {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+          ctx.fillRect(
+            canvas.width / 2 - 150,
+            canvas.height / 2 - 100,
+            300,
+            200,
+          );
+          ctx.fillStyle = "white";
+          ctx.textAlign = "center";
+          ctx.font = "bold 30px Arial";
+          ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 50);
+          ctx.font = "20px Arial";
+          ctx.fillText("Poäng: " + poang, canvas.width / 2, canvas.height / 2);
+          ctx.fillText(
+            "Bästa: " + highscore,
+            canvas.width / 2,
+            canvas.height / 2 + 30,
+          );
+          ctx.font = "italic 16px Arial";
+          ctx.fillText(
+            "Tryck ENTER för att köra igen",
+            canvas.width / 2,
+            canvas.height / 2 + 70,
+          );
+          ctx.textAlign = "left";
+        }
+
+        requestAnimationFrame(rita);
+      }
+
+      let bilderLaddade = 0;
+      function bildLaddad() {
+        bilderLaddade++;
+        if (bilderLaddade === 2) rita();
+      }
+      spelarBild.onload = bildLaddad;
+      bakgrundsBild.onload = bildLaddad;
     </script>
-</body>
+  </body>
 </html>
