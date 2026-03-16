@@ -11,22 +11,51 @@
 
     <script>
         const canvas = document.getElementById("spelPlan");
-        const ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d");
 
-        // En enkel röd fyrkant (vår "spelare")
-        let x = 10;
-        let y = 10;
+let x = 180; // Startposition X (vågrätt)
+let y = 180; // Startposition Y (lodrätt)
+const fart = 5; // Hur många pixlar vi flyttar per knapptryck
 
-        function rita() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Sudda gamla bilden
-            ctx.fillStyle = "red";
-            ctx.fillRect(x, y, 30, 30); // Rita spelaren
-            x += 1; // Flytta den lite åt höger i varje bildruta
-            
-            requestAnimationFrame(rita); // Skapa en loop
-        }
+// Vi skapar ett objekt för att hålla koll på vilka tangenter som är nedtryckta
+let tangenter = {};
 
-        rita();
+// Lyssna efter när man trycker ner en tangent
+window.addEventListener("keydown", (e) => {
+    tangenter[e.key] = true;
+});
+
+// Lyssna efter när man släpper tangenten
+window.addEventListener("keyup", (e) => {
+    tangenter[e.key] = false;
+});
+
+function uppdatera() {
+    // Kontrollera piltangenterna
+    if (tangenter["ArrowLeft"]) x -= fart;
+    if (tangenter["ArrowRight"]) x += fart;
+    if (tangenter["ArrowUp"])    y -= fart;
+    if (tangenter["ArrowDown"])  y += fart;
+
+    // Hindra gubben från att gå utanför kanten (Valfritt men bra!)
+    if (x < 0) x = 0;
+    if (x > canvas.width - 30) x = canvas.width - 30;
+    if (y < 0) y = 0;
+    if (y > canvas.height - 30) y = canvas.height - 30;
+}
+
+function rita() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Sudda
+    
+    uppdatera(); // Räkna ut ny position
+
+    ctx.fillStyle = "#FF5733"; // En lite roligare orange-röd färg
+    ctx.fillRect(x, y, 30, 30); // Rita spelaren
+    
+    requestAnimationFrame(rita); // Loopa
+}
+
+rita();
     </script>
 </body>
 </html>
