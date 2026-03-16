@@ -10,146 +10,169 @@
     <canvas id="spelPlan" width="1000" height="600"></canvas>
 
     <script>
-        const canvas = document.getElementById("spelPlan");
+function spelaHoppLjud() {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = 'square'; // Ger ett retro "Nintendo"-ljud
+    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); // Startfrekvens
+    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1); // Svep uppåt
+
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.1);
+}
+
+      const canvas = document.getElementById("spelPlan");
 const ctx = canvas.getContext("2d");
 
-let poang = 0;
-
-// --- 1. Skapa bild-objekt och ladda in filerna (precis som förut) ---
 const spelarBild = new Image();
 spelarBild.src = "tjej.png"; 
 
 const bakgrundsBild = new Image();
 bakgrundsBild.src = "stall_bakgrund.png"; 
 
-// --- Spelarinställningar ---
-let x = 180;
-let y = 180;
-const fart = 5;
+// --- Inställningar ---
+let spelAktiv = true; // Håller koll på om spelet körs eller om det är "Game Over"
+let poang = 0;
+let highscore = 0;
+
+// Spelare
+const markNiva = canvas.height - 80;
+let x = 50;
+let y = markNiva - 50;
 const spelarBredd = 60; 
 const spelarHojd = 80;  
+let velocityY = 0;
+const gravitation = 0.6;
+const hoppStyrka = -15;
+let starPaMarken = false;
 
-// NYTT för hopp:
-let velocityY = 0; // Vertikal fart
-const gravitation = 0.6; // Hur snabbt tjejen dras neråt
-const hoppStyrka = -15; // Kraften när man hoppar (negativt för uppåt)
-let starPaMarken = false; // Flagga för att se om tjejen kan hoppa
-const markNiva = canvas.height - 80; // Golvytan i spelet
+// Hinder
+let hinderX = canvas.width;
+const hinderY = markNiva - 30;
+let hinderFart = 4;
 
-// NYTT för hinder:
-let hinderX = canvas.width; // Hindrets startposition (utanför skärmen till höger)
-const hinderY = markNiva - 30; // Hindrets höjd (placerat på golvet)
-const hinderBredd = 30;
-const hinderHojd = 30;
-const hinderFart = 3;
-
-// Kontrollinställningar
 let tangenter = {};
 
-// Lyssna efter när man trycker ner och släpper en tangent
-window.addEventListener("keydown", (e) => { tangenter[e.key] = true; });
+// --- Funktion för att starta om spelet ---
+function startaOm() {
+    poang = 0;
+    hinderFart = 4;
+    hinderX = canvas.width;
+    x = 50;
+    y = markNiva - spelarHojd;
+    velocityY = 0;
+    spelAktiv = true;
+}
+
+window.addEventListener("keydown", (e) => { 
+    tangenter[e.key] = true; 
+    // Om spelet är slut och man trycker på Enter -> Starta om!
+    if (!spelAktiv && e.key === "Enter") {
+        startaOm();
+    }
+});
 window.addEventListener("keyup", (e) => { tangenter[e.key] = false; });
 
 function uppdatera() {
-    // 1. Horisontell rörelse (precis som förut)
-    if (tangenter["ArrowLeft"]) x -= fart;
-    if (tangenter["ArrowRight"]) x += fart;
+    if (!spelAktiv) return; // Stoppa uppdateringar om man krockat
 
-    // 2. Hopprörelse
-    // Applicera gravitation
+    // Hopp och rörelse
+    if (tangenter["ArrowLeft"]) x -= 5;
+    if (tangenter["ArrowRight"]) x += 5;
+
     velocityY += gravitation;
     y += velocityY;
 
-    // Kontrollera om tjejen har nått golvet
     if (y > markNiva - spelarHojd) {
         y = markNiva - spelarHojd;
         velocityY = 0;
         starPaMarken = true;
-    } else {
-        starPaMarken = false;
     }
 
-    // Lyssna efter hopp (pil upp eller mellanslag)
     if ((tangenter["ArrowUp"] || tangenter[" "]) && starPaMarken) {
         velocityY = hoppStyrka;
-        starPaMarken = false; // Kan inte hoppa igen förrän man nuddar marken
+        starPaMarken = false;
+        spelaHoppLjud(); // Magiskt kod-ljud!
     }
+    
 
-    // 3. Hinderrörelse
+    // Hinder
     hinderX -= hinderFart;
-    // Återställ hindret om det rör sig utanför skärmen till vänster
- // Inuti uppdatera-funktionen:
-if (hinderX < -hinderBredd) {
-    hinderX = canvas.width;
-    poang += 1; // Ge ett poäng för varje hoppat hinder!
-    console.log("Poäng: " + poang); // Skriver ut i konsolen (valfritt)
-}
-    // 4. Kollisionsdetektering (Check för krock!)
-    if (
-        x < hinderX + hinderBredd &&
-        x + spelarBredd > hinderX &&
-        y < hinderY + hinderHojd &&
-        y + spelarHojd > hinderY
-    ) {
-        // Inuti uppdatera-funktionen:
-
-
-    alert("Aj! Du krockade. Dina poäng: " + poang);
-    poang = 0; // Börja om på noll
-    // ... resten av krock-koden
-        x = 180;
-        y = markNiva - spelarHojd;
+    if (hinderX < -30) {
         hinderX = canvas.width;
-        tangenter = {}; // Rensa nedtryckta tangenter
+        poang += 1;
+        hinderFart += 0.2; 
     }
 
-    // 5. Hindra gubben från att gå utanför kanten (justerad)
+    // Krock-koll
+    if (x < hinderX + 30 && x + spelarBredd > hinderX && 
+        y < hinderY + 30 && y + spelarHojd > hinderY) {
+        spelAktiv = false; // Stoppa spelet istället för alert
+        if (poang > highscore) highscore = poang;
+    }
+
     if (x < 0) x = 0;
     if (x > canvas.width - spelarBredd) x = canvas.width - spelarBredd;
-    // y-positionen hanteras av hopplogiken ovan
 }
 
 function rita() {
-    // 1. Sudda hela canvasen
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
 
-    // 2. Rita bakgrundsbilden
     if (bakgrundsBild.complete) { 
         ctx.drawImage(bakgrundsBild, 0, 0, canvas.width, canvas.height);
     }
 
-    // 3. Beräkna den nya positionen
     uppdatera(); 
 
-    // 4. Rita spelaren
+    // Rita tjejen
     ctx.drawImage(spelarBild, x, y, spelarBredd, spelarHojd);
 
-    // 5. Rita hindret (en enkel röd rektangel för nu)
-    ctx.fillStyle = "red";
-    ctx.fillRect(hinderX, hinderY, hinderBredd, hinderHojd);
-
-    // Inuti rita-funktionen, efter att du ritat tjejen och hindret:
-    ctx.fillStyle = "white"; // Textfärg
-    ctx.font = "bold 24px Arial"; // Typsnitt och storlek
-    ctx.strokeStyle = "black"; // En svart kant runt texten så den syns mot bakgrunden
-    ctx.lineWidth = 3;
-
-    ctx.strokeText("Poäng: " + poang, 20, 40); // Rita kanten
-    ctx.fillText("Poäng: " + poang, 20, 40);   // Rita själva texten
+    // Rita hinder
+    ctx.fillStyle = "#8B4513"; 
+    ctx.fillRect(hinderX, hinderY, 30, 30);
     
-    // 6. Fortsätt loopen
+    // Rita poäng uppe i hörnet
+    ctx.fillStyle = "white";
+    ctx.font = "bold 20px Arial";
+    ctx.fillText("Poäng: " + poang, 20, 30);
+
+    // --- GAME OVER RUTA ---
+    if (!spelAktiv) {
+        // Rita en halvgenomskinlig svart ruta över hela skärmen
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(canvas.width/2 - 150, 100, 300, 200);
+
+        // Rita vit text i rutan
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.font = "bold 30px Arial";
+        ctx.fillText("GAME OVER", canvas.width/2, 160);
+        
+        ctx.font = "20px Arial";
+        ctx.fillText("Poäng: " + poang, canvas.width/2, 200);
+        ctx.fillText("Bästa: " + highscore, canvas.width/2, 230);
+        
+        ctx.font = "italic 16px Arial";
+        ctx.fillText("Tryck på ENTER för att köra igen", canvas.width/2, 270);
+        ctx.textAlign = "left"; // Återställ textjustering
+    }
+    
     requestAnimationFrame(rita); 
 }
 
-// Vi måste vänta tills BÅDA bilderna har laddats klart
 let bilderLaddade = 0;
 function bildLaddad() {
     bilderLaddade++;
-    if (bilderLaddade === 2) {
-        rita();
-    }
+    if (bilderLaddade === 2) rita();
 }
-
 spelarBild.onload = bildLaddad;
 bakgrundsBild.onload = bildLaddad;
     </script>
