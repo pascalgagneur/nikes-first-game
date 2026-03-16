@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vårt första spel</title>
+    <style>
+        canvas { background: #eee; display: block; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <canvas id="spelPlan" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("spelPlan");
+        const ctx = canvas.getContext("2d");
+
+        // En enkel röd fyrkant (vår "spelare")
+        let x = 10;
+        let y = 10;
+
+        function rita() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Sudda gamla bilden
+            ctx.fillStyle = "red";
+            ctx.fillRect(x, y, 30, 30); // Rita spelaren
+            x += 1; // Flytta den lite åt höger i varje bildruta
+            
+            requestAnimationFrame(rita); // Skapa en loop
+        }
+
+        rita();
+    </script>
+</body>
+</html>
