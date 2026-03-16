@@ -7,21 +7,22 @@
     </style>
 </head>
 <body>
-    <canvas id="spelPlan" width="400" height="400"></canvas>
+    <canvas id="spelPlan" width="800" height="800"></canvas>
 
     <script>
         const canvas = document.getElementById("spelPlan");
 const ctx = canvas.getContext("2d");
 
-// Spelarinställningar
+// 1. Skapa ett bild-objekt och ladda in filen
+const spelarBild = new Image();
+spelarBild.src = "tjej.png"; // Se till att filen heter exakt så här och ligger i samma mapp
+
+// Spelarinställningar (Justera storleken så den passar er bild)
 let x = 180;
 let y = 180;
 const fart = 5;
-const spelarStorlek = 30;
-
-// Spårinställningar
-let spar = []; // En lista för att spara tidigare positioner
-const maxSparLength = 10; // Hur många "svansar" vi vill ha kvar
+const spelarBredd = 40; // Hur bred tjejen ska vara på skärmen
+const spelarHojd = 100;  // Hur hög tjejen ska vara på skärmen
 
 // Kontrollinställningar
 let tangenter = {};
@@ -31,14 +32,6 @@ window.addEventListener("keydown", (e) => { tangenter[e.key] = true; });
 window.addEventListener("keyup", (e) => { tangenter[e.key] = false; });
 
 function uppdatera() {
-    // Spara den nuvarande positionen i spåret INNAN vi flyttar spelaren
-    spar.push({ x: x, y: y });
-
-    // Om spåret blir för långt, ta bort den äldsta positionen (den första i listan)
-    if (spar.length > maxSparLength) {
-        spar.shift();
-    }
-
     // Flytta spelaren baserat på piltangenter
     if (tangenter["ArrowLeft"]) x -= fart;
     if (tangenter["ArrowRight"]) x += fart;
@@ -47,9 +40,9 @@ function uppdatera() {
 
     // Hindra gubben från att gå utanför kanten
     if (x < 0) x = 0;
-    if (x > canvas.width - spelarStorlek) x = canvas.width - spelarStorlek;
+    if (x > canvas.width - spelarBredd) x = canvas.width - spelarBredd;
     if (y < 0) y = 0;
-    if (y > canvas.height - spelarStorlek) y = canvas.height - spelarStorlek;
+    if (y > canvas.height - spelarHojd) y = canvas.height - spelarHojd;
 }
 
 function rita() {
@@ -59,23 +52,18 @@ function rita() {
     // 2. Beräkna den nya positionen
     uppdatera(); 
 
-    // 3. Rita spåret (viktigt: rita spåret FÖRE spelaren)
-    ctx.fillStyle = "rgba(255, 87, 51, 0.2)"; // Samma färg som spelaren, men med 20% transparens
-    for (let i = 0; i < spar.length; i++) {
-        const punkt = spar[i];
-        ctx.fillRect(punkt.x, punkt.y, spelarStorlek, spelarStorlek); // Rita en svansbit
-    }
-
-    // 4. Rita spelaren
-    ctx.fillStyle = "#FF5733"; // Spelarens fasta färg
-    ctx.fillRect(x, y, spelarStorlek, spelarStorlek); // Rita spelaren
+    // 3. Rita bilden istället för fyrkanten!
+    // ctx.drawImage(bild, x, y, bredd, höjd)
+    ctx.drawImage(spelarBild, x, y, spelarBredd, spelarHojd);
     
-    // 5. Fortsätt loopen
+    // 4. Fortsätt loopen
     requestAnimationFrame(rita); 
 }
 
-// Starta spel-loopen
-rita();
+// Vi måste vänta tills bilden har laddats klart innan vi startar spelet
+spelarBild.onload = function() {
+    rita();
+};
     </script>
 </body>
 </html>
