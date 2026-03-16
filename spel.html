@@ -28,6 +28,23 @@ function spelaHoppLjud() {
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.1);
 }
+// Lista på era favorit-Mellolåtar
+const melloLatat = [
+    "mello_1.mp3"  
+];
+let nuvarandeLatIndex = 0;
+const bakgrundsMusik = new Audio(melloLatat[nuvarandeLatIndex]);
+
+// Inställningar för musiken
+bakgrundsMusik.loop = false; // Vi vill byta låt när en är slut
+bakgrundsMusik.volume = 0.2; // Sänk volymen lite så man hör hoppen!
+
+// När en låt tar slut, spela nästa!
+bakgrundsMusik.onended = function() {
+    nuvarandeLatIndex = (nuvarandeLatIndex + 1) % melloLatat.length;
+    bakgrundsMusik.src = melloLatat[nuvarandeLatIndex];
+    bakgrundsMusik.play();
+};
 
       const canvas = document.getElementById("spelPlan");
 const ctx = canvas.getContext("2d");
@@ -73,10 +90,14 @@ function startaOm() {
 }
 
 window.addEventListener("keydown", (e) => { 
+    if (bakgrundsMusik.paused) {
+            bakgrundsMusik.play();
+    }
     tangenter[e.key] = true; 
     // Om spelet är slut och man trycker på Enter -> Starta om!
     if (!spelAktiv && e.key === "Enter") {
         startaOm();
+        
     }
 });
 window.addEventListener("keyup", (e) => { tangenter[e.key] = false; });
