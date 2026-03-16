@@ -7,30 +7,43 @@
     </style>
 </head>
 <body>
-    <canvas id="spelPlan" width="800" height="600"></canvas>
+    <canvas id="spelPlan" width="1000" height="600"></canvas>
 
     <script>
         const canvas = document.getElementById("spelPlan");
 const ctx = canvas.getContext("2d");
 
-// --- 1. Skapa bild-objekt och ladda in filerna ---
+let poang = 0;
 
-// Ladda spelarbilden (precis som förut)
+// --- 1. Skapa bild-objekt och ladda in filerna (precis som förut) ---
 const spelarBild = new Image();
 spelarBild.src = "tjej.png"; 
 
-// NYTT: Ladda bakgrundsbilden
 const bakgrundsBild = new Image();
-bakgrundsBild.src = "stall_bakgrund.png"; // Se till att filen heter exakt så här och ligger i samma mapp
+bakgrundsBild.src = "stall_bakgrund.png"; 
 
-// --- Spelarinställningar (precis som förut) ---
+// --- Spelarinställningar ---
 let x = 180;
 let y = 180;
-const fart = 4;
+const fart = 5;
 const spelarBredd = 60; 
 const spelarHojd = 80;  
 
-// Kontrollinställningar (precis som förut)
+// NYTT för hopp:
+let velocityY = 0; // Vertikal fart
+const gravitation = 0.6; // Hur snabbt tjejen dras neråt
+const hoppStyrka = -15; // Kraften när man hoppar (negativt för uppåt)
+let starPaMarken = false; // Flagga för att se om tjejen kan hoppa
+const markNiva = canvas.height - 80; // Golvytan i spelet
+
+// NYTT för hinder:
+let hinderX = canvas.width; // Hindrets startposition (utanför skärmen till höger)
+const hinderY = markNiva - 30; // Hindrets höjd (placerat på golvet)
+const hinderBredd = 30;
+const hinderHojd = 30;
+const hinderFart = 3;
+
+// Kontrollinställningar
 let tangenter = {};
 
 // Lyssna efter när man trycker ner och släpper en tangent
@@ -38,41 +51,97 @@ window.addEventListener("keydown", (e) => { tangenter[e.key] = true; });
 window.addEventListener("keyup", (e) => { tangenter[e.key] = false; });
 
 function uppdatera() {
-    // Flytta spelaren baserat på piltangenter
+    // 1. Horisontell rörelse (precis som förut)
     if (tangenter["ArrowLeft"]) x -= fart;
     if (tangenter["ArrowRight"]) x += fart;
-    if (tangenter["ArrowUp"]) y -= fart;
-    if (tangenter["ArrowDown"]) y += fart;
 
-    // Hindra gubben från att gå utanför kanten
+    // 2. Hopprörelse
+    // Applicera gravitation
+    velocityY += gravitation;
+    y += velocityY;
+
+    // Kontrollera om tjejen har nått golvet
+    if (y > markNiva - spelarHojd) {
+        y = markNiva - spelarHojd;
+        velocityY = 0;
+        starPaMarken = true;
+    } else {
+        starPaMarken = false;
+    }
+
+    // Lyssna efter hopp (pil upp eller mellanslag)
+    if ((tangenter["ArrowUp"] || tangenter[" "]) && starPaMarken) {
+        velocityY = hoppStyrka;
+        starPaMarken = false; // Kan inte hoppa igen förrän man nuddar marken
+    }
+
+    // 3. Hinderrörelse
+    hinderX -= hinderFart;
+    // Återställ hindret om det rör sig utanför skärmen till vänster
+ // Inuti uppdatera-funktionen:
+if (hinderX < -hinderBredd) {
+    hinderX = canvas.width;
+    poang += 1; // Ge ett poäng för varje hoppat hinder!
+    console.log("Poäng: " + poang); // Skriver ut i konsolen (valfritt)
+}
+    // 4. Kollisionsdetektering (Check för krock!)
+    if (
+        x < hinderX + hinderBredd &&
+        x + spelarBredd > hinderX &&
+        y < hinderY + hinderHojd &&
+        y + spelarHojd > hinderY
+    ) {
+        // Inuti uppdatera-funktionen:
+
+
+    alert("Aj! Du krockade. Dina poäng: " + poang);
+    poang = 0; // Börja om på noll
+    // ... resten av krock-koden
+        x = 180;
+        y = markNiva - spelarHojd;
+        hinderX = canvas.width;
+        tangenter = {}; // Rensa nedtryckta tangenter
+    }
+
+    // 5. Hindra gubben från att gå utanför kanten (justerad)
     if (x < 0) x = 0;
     if (x > canvas.width - spelarBredd) x = canvas.width - spelarBredd;
-    if (y < 0) y = 0;
-    if (y > canvas.height - spelarHojd) y = canvas.height - spelarHojd;
+    // y-positionen hanteras av hopplogiken ovan
 }
 
 function rita() {
-    // 1. Sudda hela canvasen (valfritt när man har bakgrundsbild, men bra praxis)
+    // 1. Sudda hela canvasen
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
 
-    // NYTT: 2. Rita bakgrundsbilden FÖRE spelaren
-    // ctx.drawImage(bild, x, y, bredd, höjd)
-    // Vi startar i (0,0) och ritar den över hela canvasens storlek
-    if (bakgrundsBild.complete) { // Säkerställ att bakgrunden är laddad
+    // 2. Rita bakgrundsbilden
+    if (bakgrundsBild.complete) { 
         ctx.drawImage(bakgrundsBild, 0, 0, canvas.width, canvas.height);
     }
 
     // 3. Beräkna den nya positionen
     uppdatera(); 
 
-    // 4. Rita spelaren OVANPÅ bakgrunden
+    // 4. Rita spelaren
     ctx.drawImage(spelarBild, x, y, spelarBredd, spelarHojd);
+
+    // 5. Rita hindret (en enkel röd rektangel för nu)
+    ctx.fillStyle = "red";
+    ctx.fillRect(hinderX, hinderY, hinderBredd, hinderHojd);
+
+    // Inuti rita-funktionen, efter att du ritat tjejen och hindret:
+    ctx.fillStyle = "white"; // Textfärg
+    ctx.font = "bold 24px Arial"; // Typsnitt och storlek
+    ctx.strokeStyle = "black"; // En svart kant runt texten så den syns mot bakgrunden
+    ctx.lineWidth = 3;
+
+    ctx.strokeText("Poäng: " + poang, 20, 40); // Rita kanten
+    ctx.fillText("Poäng: " + poang, 20, 40);   // Rita själva texten
     
-    // 5. Fortsätt loopen
+    // 6. Fortsätt loopen
     requestAnimationFrame(rita); 
 }
 
-// Vi måste vänta tills BÅDA bilderna har laddats klart innan vi startar spelet
+// Vi måste vänta tills BÅDA bilderna har laddats klart
 let bilderLaddade = 0;
 function bildLaddad() {
     bilderLaddade++;
