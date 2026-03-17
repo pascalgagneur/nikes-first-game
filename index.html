@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
   <head>
+    <meta charset="UTF-8">
     <title>Vårt första spel</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
@@ -8,9 +9,14 @@
         margin: 0;
         overflow: hidden;
         background-color: #000;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
       }
       canvas {
         display: block;
+        touch-action: none;
       }
     </style>
   </head>
@@ -65,7 +71,7 @@
       let poang = 0;
       let highscore = 0;
 
-      let förraTiden = performance.now();
+      let forraTiden = performance.now();
 
       let markNiva = canvas.height - 80;
       let x = 50;
@@ -90,38 +96,72 @@
         if (starPaMarken) y = markNiva - spelarHojd;
       });
 
-      // --- KONTROLLER OCH KNAPPAR ---
-      window.addEventListener("mousedown", function (e) {
-        // Om pausad, kolla om man klickar på knapparna
+      // --- Hjälp: hämta position från mus eller touch ---
+      function getEventPos(e) {
+        if (e.touches && e.touches.length > 0) {
+          return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+        }
+        if (e.changedTouches && e.changedTouches.length > 0) {
+          return { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
+        }
+        return { clientX: e.clientX, clientY: e.clientY };
+      }
+
+      function handleTap(e) {
+        if (e.cancelable) e.preventDefault();
+        const pos = getEventPos(e);
+
+        // Om game over: tryck för att starta om
+        if (!spelAktiv) {
+          startaOm();
+          return;
+        }
+
+        // Om pausad, kolla om man trycker på knapparna
         if (arPausat) {
           // Fortsätt-knapp
           if (
-            e.clientX > canvas.width / 2 - 100 &&
-            e.clientX < canvas.width / 2 + 100 &&
-            e.clientY > 150 &&
-            e.clientY < 200
+            pos.clientX > canvas.width / 2 - 100 &&
+            pos.clientX < canvas.width / 2 + 100 &&
+            pos.clientY > 150 &&
+            pos.clientY < 200
           ) {
             arPausat = false;
           }
           // Avsluta-knapp
           if (
-            e.clientX > canvas.width / 2 - 100 &&
-            e.clientX < canvas.width / 2 + 100 &&
-            e.clientY > 220 &&
-            e.clientY < 270
+            pos.clientX > canvas.width / 2 - 100 &&
+            pos.clientX < canvas.width / 2 + 100 &&
+            pos.clientY > 220 &&
+            pos.clientY < 270
           ) {
             location.reload();
           }
           return;
         }
 
-        // Hoppa vid klick om spelet körs
+        // Paus-knapp (höger övre hörnet)
+        if (
+          pos.clientX > canvas.width - 60 &&
+          pos.clientX < canvas.width - 10 &&
+          pos.clientY > 10 &&
+          pos.clientY < 50
+        ) {
+          arPausat = true;
+          return;
+        }
+
+        // Hoppa vid klick/tryck om spelet körs
         if (spelAktiv && starPaMarken) {
+          if (bakgrundsMusik.paused) bakgrundsMusik.play();
           velocityY = hoppStyrka;
           starPaMarken = false;
           spelaHoppLjud();
         }
-      });
+      }
+
+      window.addEventListener("mousedown", handleTap);
+      window.addEventListener("touchstart", handleTap, { passive: false });
 
       window.addEventListener("keydown", (e) => {
         if (bakgrundsMusik.paused) bakgrundsMusik.play();
@@ -195,8 +235,8 @@
 
       function rita() {
         let nu = performance.now();
-        let deltaTime = (nu - förraTiden) / 16.66;
-        förraTiden = nu;
+        let deltaTime = (nu - forraTiden) / 16.66;
+        forraTiden = nu;
 
         // Flytta tjejen med en konstant hastighet
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -220,6 +260,17 @@
         ctx.shadowColor = "black";
         ctx.shadowBlur = 4;
         ctx.fillText("Poäng: " + poang, 30, 40);
+
+        // Paus-knapp (synlig under spelet, för touch)
+        if (spelAktiv && !arPausat) {
+          ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+          ctx.fillRect(canvas.width - 55, 12, 42, 36);
+          ctx.fillStyle = "#333";
+          ctx.font = "bold 20px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText("II", canvas.width - 34, 36);
+          ctx.textAlign = "left";
+        }
 
         // --- PAUS MENY ---
         if (arPausat) {
@@ -263,7 +314,7 @@
           );
           ctx.font = "italic 16px Arial";
           ctx.fillText(
-            "Tryck ENTER för att köra igen",
+            "Tryck för att köra igen",
             canvas.width / 2,
             canvas.height / 2 + 70,
           );
