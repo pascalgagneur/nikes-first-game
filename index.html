@@ -64,6 +64,8 @@
       spelarBild.src = "tjej.png";
       const bakgrundsBild = new Image();
       bakgrundsBild.src = "stall_bakgrund.png";
+      const hinderBild = new Image();
+      hinderBild.src = "ho-bal.png";
 
       // --- SPEL-VARIABLER ---
       let spelAktiv = true;
@@ -85,6 +87,8 @@
       let starPaMarken = false;
 
       let hinderX = canvas.width;
+      const hinderBredd = 40;
+      const hinderHojd = 50;
       let hinderFart = 4;
       let tangenter = {};
 
@@ -211,18 +215,18 @@
         }
 
         hinderX -= hinderFart * dt;
-        if (hinderX < -50) {
+        if (hinderX < -hinderBredd) {
           hinderX = canvas.width;
           poang += 1;
           hinderFart += 0.2;
         }
 
         // Krock-koll (räknar hinderY live)
-        let hinderY = markNiva - 30;
+        let hinderY = markNiva - hinderHojd;
         if (
-          x < hinderX + 30 &&
+          x < hinderX + hinderBredd &&
           x + spelarBredd > hinderX &&
-          y < hinderY + 30 &&
+          y < hinderY + hinderHojd &&
           y + spelarHojd > hinderY
         ) {
           spelAktiv = false;
@@ -251,8 +255,13 @@
         ctx.drawImage(spelarBild, x, y, spelarBredd, spelarHojd);
 
         // Rita hinder
-        ctx.fillStyle = "#8B4513";
-        ctx.fillRect(hinderX, markNiva - 30, 30, 30);
+        ctx.drawImage(
+          hinderBild,
+          hinderX,
+          markNiva - hinderHojd,
+          hinderBredd,
+          hinderHojd,
+        );
 
         // Poäng
         ctx.fillStyle = "white";
@@ -327,10 +336,11 @@
       let bilderLaddade = 0;
       function bildLaddad() {
         bilderLaddade++;
-        if (bilderLaddade === 2) rita();
+        if (bilderLaddade === 3) rita();
       }
       spelarBild.onload = bildLaddad;
       bakgrundsBild.onload = bildLaddad;
+      hinderBild.onload = bildLaddad;
     </script>
   </body>
 </html>
