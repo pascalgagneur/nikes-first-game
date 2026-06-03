@@ -67,6 +67,237 @@
       const hinderBild = new Image();
       hinderBild.src = "ho-bal.png";
 
+      // Rita häst med mer djup och skuggning
+      function ritaHast(ctx, ox, oy, w, h) {
+        ctx.save();
+        ctx.translate(ox, oy);
+        ctx.scale(w / 140, h / 70);
+
+        const kropp = "#B1683D";
+        const kroppLjus = "#D49060";
+        const kroppHighlight = "#E8A878";
+        const kroppMork = "#7A4428";
+        const kroppSkugga = "#5C3018";
+        const man = "#E7B27C";
+        const manLjus = "#F5D4A0";
+        const manMork = "#B08050";
+        const hov = "#4A2818";
+
+        function linGrad(x0, y0, x1, y1, stops) {
+          const g = ctx.createLinearGradient(x0, y0, x1, y1);
+          stops.forEach(([p, c]) => g.addColorStop(p, c));
+          return g;
+        }
+        function radGrad(cx, cy, r, stops) {
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          stops.forEach(([p, c]) => g.addColorStop(p, c));
+          return g;
+        }
+
+        // Skugga på marken
+        ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+        ctx.beginPath();
+        ctx.ellipse(55, 62, 48, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Svans
+        ctx.fillStyle = linGrad(0, 28, 0, 50, [[0, manLjus], [0.6, man], [1, manMork]]);
+        ctx.beginPath();
+        ctx.moveTo(10, 30);
+        ctx.quadraticCurveTo(0, 34, 2, 46);
+        ctx.quadraticCurveTo(6, 52, 14, 48);
+        ctx.quadraticCurveTo(18, 40, 10, 30);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(92, 48, 24, 0.3)";
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        // Bakben (mörkare på vänster sida = djup)
+        function ritaBen(bx, by, bw, bh) {
+          const cx = bx + bw / 2;
+          ctx.fillStyle = radGrad(cx, by + bh * 0.3, bw * 1.2, [
+            [0, kroppHighlight],
+            [0.45, kroppLjus],
+            [0.75, kropp],
+            [1, kroppMork],
+          ]);
+          ctx.beginPath();
+          ctx.ellipse(cx, by + bh / 2, bw / 2 + 1, bh / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          // Knä-skugga
+          ctx.fillStyle = "rgba(92, 48, 24, 0.35)";
+          ctx.beginPath();
+          ctx.ellipse(cx - 1, by + bh * 0.55, bw / 2 + 0.5, 3, 0, 0, Math.PI * 2);
+          ctx.fill();
+          // Hov
+          ctx.fillStyle = linGrad(cx - 3, by + bh, cx + 3, by + bh + 5, [
+            [0, "#6B4030"],
+            [0.5, hov],
+            [1, kroppSkugga],
+          ]);
+          ctx.beginPath();
+          ctx.ellipse(cx, by + bh + 2, bw / 2 + 1.5, 3.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ritaBen(17, 34, 8, 24);
+        ritaBen(27, 34, 8, 24);
+
+        // Kropp – cylinderkänsla med radial gradient
+        ctx.fillStyle = radGrad(55, 24, 50, [
+          [0, kroppHighlight],
+          [0.35, kroppLjus],
+          [0.65, kropp],
+          [1, kroppMork],
+        ]);
+        ctx.beginPath();
+        ctx.moveTo(14, 34);
+        ctx.bezierCurveTo(4, 28, 8, 14, 32, 12);
+        ctx.bezierCurveTo(68, 8, 96, 12, 102, 22);
+        ctx.bezierCurveTo(108, 30, 104, 38, 94, 40);
+        ctx.bezierCurveTo(58, 44, 24, 44, 14, 38);
+        ctx.bezierCurveTo(8, 36, 8, 34, 14, 34);
+        ctx.fill();
+
+        // Buk-skugga
+        ctx.fillStyle = linGrad(0, 30, 0, 42, [[0, "rgba(92,48,24,0)"], [0.5, "rgba(92,48,24,0.45)"], [1, "rgba(60,30,16,0.6)"]]);
+        ctx.beginPath();
+        ctx.moveTo(20, 34);
+        ctx.bezierCurveTo(40, 40, 70, 40, 90, 36);
+        ctx.bezierCurveTo(85, 42, 50, 44, 22, 40);
+        ctx.closePath();
+        ctx.fill();
+
+        // Rygg-highlight
+        ctx.fillStyle = linGrad(0, 10, 0, 20, [[0, "rgba(255,220,170,0.55)"], [1, "rgba(255,220,170,0)"]]);
+        ctx.beginPath();
+        ctx.moveTo(22, 16);
+        ctx.bezierCurveTo(50, 12, 80, 14, 96, 20);
+        ctx.bezierCurveTo(70, 18, 40, 18, 22, 20);
+        ctx.closePath();
+        ctx.fill();
+
+        // Framben
+        ritaBen(73, 34, 8, 24);
+        ritaBen(83, 34, 8, 24);
+
+        // Hals – cylinder med skugga under
+        ctx.fillStyle = radGrad(102, 20, 18, [
+          [0, kroppHighlight],
+          [0.5, kroppLjus],
+          [1, kroppMork],
+        ]);
+        ctx.beginPath();
+        ctx.moveTo(88, 26);
+        ctx.bezierCurveTo(96, 14, 110, 10, 116, 16);
+        ctx.bezierCurveTo(122, 22, 118, 30, 108, 32);
+        ctx.bezierCurveTo(96, 34, 88, 30, 88, 26);
+        ctx.fill();
+        ctx.fillStyle = "rgba(60,30,16,0.35)";
+        ctx.beginPath();
+        ctx.moveTo(92, 28);
+        ctx.quadraticCurveTo(100, 32, 110, 30);
+        ctx.quadraticCurveTo(105, 34, 92, 32);
+        ctx.fill();
+
+        // Huvud – rund volym
+        ctx.fillStyle = radGrad(126, 18, 16, [
+          [0, kroppHighlight],
+          [0.4, kroppLjus],
+          [0.75, kropp],
+          [1, kroppMork],
+        ]);
+        ctx.beginPath();
+        ctx.moveTo(108, 20);
+        ctx.bezierCurveTo(114, 8, 136, 6, 140, 16);
+        ctx.bezierCurveTo(144, 26, 138, 34, 126, 34);
+        ctx.bezierCurveTo(114, 34, 106, 28, 108, 20);
+        ctx.fill();
+
+        // Kind-skugga
+        ctx.fillStyle = "rgba(92,48,24,0.3)";
+        ctx.beginPath();
+        ctx.ellipse(118, 28, 5, 4, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Nos – rund och lyft
+        ctx.fillStyle = radGrad(136, 26, 6, [
+          [0, kroppHighlight],
+          [0.6, kroppLjus],
+          [1, kropp],
+        ]);
+        ctx.beginPath();
+        ctx.ellipse(136, 26, 7, 5, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(180,100,60,0.4)";
+        ctx.beginPath();
+        ctx.ellipse(139, 27, 2, 1.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Öga med djup
+        ctx.fillStyle = "#1A1008";
+        ctx.beginPath();
+        ctx.ellipse(122, 20, 4, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#3D2818";
+        ctx.beginPath();
+        ctx.ellipse(122, 21, 2.5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.ellipse(123.5, 18.5, 1.5, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Öron med skugga
+        function ritaOra(x1, y1, x2, y2, x3, y3) {
+          ctx.fillStyle = linGrad(x2, y2, x1, y1, [[0, kroppMork], [0.5, kropp], [1, kroppLjus]]);
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.lineTo(x3, y3);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ritaOra(110, 13, 112, 4, 118, 13);
+        ritaOra(116, 13, 118, 5, 124, 14);
+
+        // Man – lager för volym
+        ctx.fillStyle = linGrad(0, 0, 0, 22, [[0, manLjus], [0.4, man], [1, manMork]]);
+        ctx.beginPath();
+        ctx.moveTo(86, 22);
+        ctx.quadraticCurveTo(82, 4, 98, 2);
+        ctx.quadraticCurveTo(110, 0, 116, 10);
+        ctx.quadraticCurveTo(120, 20, 112, 26);
+        ctx.quadraticCurveTo(98, 28, 86, 22);
+        ctx.fill();
+        ctx.fillStyle = "rgba(160,100,50,0.25)";
+        ctx.beginPath();
+        ctx.moveTo(90, 20);
+        ctx.quadraticCurveTo(94, 10, 106, 12);
+        ctx.quadraticCurveTo(100, 22, 90, 24);
+        ctx.fill();
+        // Man-tufs
+        ctx.fillStyle = linGrad(0, 4, 0, 16, [[0, manLjus], [1, manMork]]);
+        ctx.beginPath();
+        ctx.moveTo(106, 10);
+        ctx.quadraticCurveTo(112, 2, 120, 8);
+        ctx.quadraticCurveTo(118, 16, 110, 18);
+        ctx.fill();
+
+        // Tunn kontur för definition
+        ctx.strokeStyle = "rgba(60, 30, 16, 0.35)";
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(14, 34);
+        ctx.bezierCurveTo(4, 28, 8, 14, 32, 12);
+        ctx.bezierCurveTo(68, 8, 96, 12, 102, 22);
+        ctx.bezierCurveTo(108, 30, 104, 38, 94, 40);
+        ctx.bezierCurveTo(58, 44, 24, 44, 14, 38);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
       // --- SPEL-VARIABLER ---
       let spelAktiv = true;
       let arPausat = false;
@@ -77,8 +308,12 @@
 
       let markNiva = canvas.height - 80;
       let x = 50;
-      const spelarBredd = 60;
-      const spelarHojd = 80;
+      const spelarBredd = 150;
+      const spelarHojd = 115;
+      const hastRitaHojd = 68;
+      const tjejRitaBredd = 52;
+      const tjejRitaHojd = 54;
+      const tjejRitaX = 42;
       let y = markNiva - spelarHojd;
 
       let velocityY = 0;
@@ -251,8 +486,25 @@
 
         uppdatera(deltaTime);
 
-        // Rita tjejen
-        ctx.drawImage(spelarBild, x, y, spelarBredd, spelarHojd);
+        // Rita häst och tjej ovanpå (klipper benen)
+        const hastY = y + spelarHojd - hastRitaHojd;
+        ritaHast(ctx, x, hastY, spelarBredd, hastRitaHojd);
+        const kroppsAndel = 0.72;
+        const srcH = spelarBild.naturalHeight * kroppsAndel;
+        const tjejY = hastY - tjejRitaHojd + 16;
+        if (spelarBild.complete && spelarBild.naturalHeight > 0) {
+          ctx.drawImage(
+            spelarBild,
+            0,
+            0,
+            spelarBild.naturalWidth,
+            srcH,
+            x + tjejRitaX,
+            tjejY,
+            tjejRitaBredd,
+            tjejRitaHojd,
+          );
+        }
 
         // Rita hinder
         ctx.drawImage(
